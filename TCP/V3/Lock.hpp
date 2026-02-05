@@ -7,6 +7,8 @@
 namespace LockModule{
     class Mutex{
     public:
+        Mutex(const Mutex&) = delete;
+        const Mutex& operator=(const Mutex&) = delete;
         Mutex() { ::pthread_mutex_init(&_lock, nullptr); }
         ~Mutex() { ::pthread_mutex_destroy(&_lock); }
         void Lock() { ::pthread_mutex_lock(&_lock); }
@@ -26,7 +28,7 @@ namespace LockModule{
 
         ~LockGuard() { _mutex.UnLock(); }
     private:
-        Mutex _mutex;
+        Mutex& _mutex;
     };
 
     // 条件变量封装，用于线程间“通知-等待”机制

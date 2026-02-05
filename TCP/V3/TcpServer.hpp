@@ -20,7 +20,7 @@ using Handler = std::function<void(int, InetAddr)>;
 class TcpServer{
 public:
     TcpServer(uint16_t port = gport)
-        :_port(gport)
+        :_port(port)
         ,_listensock(gfd)
         ,_is_running(false)
         ,_threadpool(new ThreadPool<Task>(5))
