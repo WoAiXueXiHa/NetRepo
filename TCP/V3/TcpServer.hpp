@@ -3,6 +3,7 @@
 #include <iostream>
 #include <functional>
 #include <unistd.h>
+#include <signal.h>
 #include "InetAddr.hpp"
 #include "Log.hpp"
 #include "ThreadPool.hpp"
@@ -23,7 +24,12 @@ public:
         ,_listensock(gfd)
         ,_is_running(false)
         ,_threadpool(new ThreadPool<Task>(5))
-        {}
+        {
+            // 忽略SIGPIPE信号
+            // 如果不忽略，当客户端断开连接时，服务器还在往里写数据
+            // os会发信号把服务器杀掉
+            signal(SIGPIPE, SIG_IGN);
+        }
     
     void InitServer(){
         // 1. 创建socket

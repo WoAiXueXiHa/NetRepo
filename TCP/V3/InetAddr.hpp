@@ -52,7 +52,10 @@ public:
             memset(&_net_addr, 0, sizeof(_net_addr));
             _net_addr.sin_family = AF_INET;
             _net_addr.sin_port = ::htons(_port);
-            _net_addr.sin_addr.s_addr = ::inet_pton(AF_INET, _ip.c_str(), &_net_addr.sin_addr);
+            int n = ::inet_pton(AF_INET, _ip.c_str(), &_net_addr.sin_addr);
+            if(n < 0){
+                std::cerr << "Invalid IP Address: " << _ip << std::endl;
+            }
         }
     
     bool operator==(const InetAddr& addr){
