@@ -16,42 +16,50 @@ int main(){
     // 0: 默认
     int sockfd = ::socket(AF_INET, SOCK_DGRAM, 0);
     if(sockfd < 0){
-        std::cerr << "socket create err" << errno << std::endl;
-        return -1;
+        std::cerr << "socket create failed: " << errno << std::endl;
+        exit(-1);
     }
-
+    std::cout << "socket create success! fd: " << sockfd << "\n";
     // 2. 填充服务器地址结构体
     struct sockaddr_in server_addr;
-    memset(&server_addr, 0, sizeof(server_addr));   // 清零，防止垃圾数据
+    memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;   // 接收任意网卡的连接
-    server_addr.sin_port = ::htons(PORT);   // 端口转网络字节序
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = ::htons(PORT);
 
-    // 3. 绑定 bind
-    // 必须绑定，否则客户端不知道发给谁
-    if(::bind(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0){
-        std::cerr << "bind err" << errno << std::endl;
-        return -1;
+    // 3. 绑定服务器 bind
+    int n = ::bind(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr));
+    if(n < 0){
+        std::cerr << "bind failed: " << errno << std::endl;
+        exit(-1);
     }
-    std::cout << "UDP Server is running on port " << PORT << "..." << std::endl;
+    std::cout << "UDP server is running on port " << PORT << std::endl;
 
     char buffer[BUFFER_SIZE];
-    struct sockaddr_in client_addr;         // 必须保护客户端的信息
-    socklen_t len = sizeof(client_addr);    // 必须初始化为结构体的大小
+    struct sockaddr_in client_addr;
+    socklen_t len = sizeof(client_addr);
+    // 4. 接收数据 recvfrom
+    // 最后两个参数是输出型参数，内核会把"谁发的"填进去
     while(1){
-        // 4. 接收数据 recvfrom
-        // 最后两个参数是输出型参数，内核会把"谁发的"填进去
-        int n = ::recvfrom(sockfd, (char*)buffer, BUFFER_SIZE,
+        int n = ::recvfrom(sockfd, buffer, BUFFER_SIZE,
                            0, (struct sockaddr*)&client_addr, &len);
-        buffer[n] = '\0';
-        std::cout << "Client : " << buffer << std::endl;
-
+        if(n > 0) {
+            buffer[n] = '\0';
+            std::cout << "Clinet : " << buffer << std::endl;
+        }
+        else if(0 == n) {
+            std::cout << "Received empty packet\n";
+        } else {
+            std::cerr << "recv err\n";
+            break;
+        }
         // 5. 发送回复 sendto
-        const char* hello = "hello from server";
-        ::sendto(sockfd, (const char*)hello, strlen(hello),
-                 0, (const struct sockaddr*)&client_addr, len);
-    }
-    close(sockfd);
+        const char* hello = "Hello from server";
+        ::sendto(sockfd, hello, strlen(hello),
+                 0, (struct sockaddr*)&client_addr, len);
+    }  
+
+    ::close(sockfd);
 
     return 0;
 }
